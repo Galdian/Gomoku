@@ -107,14 +107,14 @@ while running:
 			mouse_pos = pygame.mouse.get_pos()
 			for point in points_list:
 				point_in_space = point[0]
-				if point_in_space.collidepoint(mouse_pos) and pygame.MOUSEBUTTONUP:
+				if point_in_space.collidepoint(mouse_pos) and pygame.MOUSEBUTTONUP and point[1].player == 0:
 					draw_stone(current_player, point[1].coords_for_stone[0], point[1].coords_for_stone[1])
 					point[1].player = current_player
 					if check_victory_conditions(points_list, current_player, point[1].xcor, point[1].ycor):
 						pygame.display.update()
 						messagebox.showinfo(title="Game finished!", message=f"Player {current_player} has won!")
 						pygame.quit()
-			next_turn()
+					next_turn()
 
 		pygame.display.update()
 
