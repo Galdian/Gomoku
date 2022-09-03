@@ -1,4 +1,4 @@
-from src.packages import Point, check_victory_conditions
+from src.packages import Point, check_connected_stones, AI_move, find_point_by_coor, find_stone_coor
 from tkinter import messagebox
 import pygame
 from pygame.locals import *
@@ -35,6 +35,7 @@ square_border = (BOARD_SQUARE_LENGTH / (NUM_OF_LINES) * 0.9)
 vertical = 32
 point_xcoor = 1
 points_list = []
+ai_points_list = [[], [], []]
 for a in range(0, NUM_OF_LINES):
 	horizontal = 32
 	point_ycoor = 1
@@ -43,11 +44,11 @@ for a in range(0, NUM_OF_LINES):
 		horizontal += BOARD_SQUARE_LENGTH / (NUM_OF_LINES - 1)
 		points_list.append([point_in_space, Point(point_xcoor, point_ycoor, 0, (
 			point_in_space.left + square_border / 2, point_in_space.top + square_border / 2))])
+		ai_points_list[0].append([point_xcoor, point_ycoor])
 		point_ycoor += 1
 
 	vertical += BOARD_SQUARE_LENGTH / (NUM_OF_LINES - 1)
 	point_xcoor += 1
-print(points_list)
 
 # LINES
 
@@ -66,7 +67,12 @@ for a in range(0, NUM_OF_LINES):
 screen.blit(background, (0, 0))
 
 
+def ai_set_points_lists(player, xcor, ycor):
+	ai_points_list[0].remove([xcor, ycor])
+	ai_points_list[player].append([xcor, ycor])
+
 # DRAW STONE
+
 
 def draw_stone(player, xcor, ycor):
 	if player == 1:
@@ -90,7 +96,33 @@ def next_turn():
 		current_player = 1
 
 
+# CPU MOVE
+prev_move = []
+def cpu_move(points_list, player, prev_move):
+	movecords = AI_move(ai_points_list, player, prev_move)
+	drawcords = find_stone_coor(points_list, movecords[0], movecords[1])
+	draw_stone(player, drawcords[0], drawcords[1])
+	points_list[find_point_by_coor(points_list, movecords[0], movecords[1])][1].player = player
+	prev_move = [movecords[0], movecords[1]]
+	ai_set_points_lists(player, movecords[0], movecords[1])
+	if check_connected_stones(ai_points_list, player, movecords[0], movecords[1]) == 4:
+		pygame.display.update()
+		finish()
+	next_turn()
+
+
 # MAIN LOOP
+
+answer = messagebox.askyesno("Let's start the game!", "Would you like to go first?")
+if answer:
+	cpu_player = 2
+else:
+	cpu_player = 1
+
+def finish():
+	messagebox.showinfo(title="Game finished!", message=f"Player {current_player} has won!")
+	pygame.quit()
+
 
 pygame.display.flip()
 
@@ -103,6 +135,10 @@ while running:
 			running = False
 		if not running:
 			pygame.quit()
+		elif current_player == cpu_player:
+			cpu_move(ai_points_list, current_player, prev_move)
+		elif current_player != cpu_player:
+			cpu_move(ai_points_list, current_player, prev_move)
 		elif event.type == MOUSEBUTTONUP:
 			mouse_pos = pygame.mouse.get_pos()
 			for point in points_list:
@@ -110,10 +146,11 @@ while running:
 				if point_in_space.collidepoint(mouse_pos) and pygame.MOUSEBUTTONUP and point[1].player == 0:
 					draw_stone(current_player, point[1].coords_for_stone[0], point[1].coords_for_stone[1])
 					point[1].player = current_player
-					if check_victory_conditions(points_list, current_player, point[1].xcor, point[1].ycor):
+					ai_set_points_lists(current_player, point[1].xcor, point[1].ycor)
+					prev_move = [point[1].xcor, point[1].ycor]
+					if check_connected_stones(ai_points_list, current_player, point[1].xcor, point[1].ycor) == 4:
 						pygame.display.update()
-						messagebox.showinfo(title="Game finished!", message=f"Player {current_player} has won!")
-						pygame.quit()
+						finish()
 					next_turn()
 
 		pygame.display.update()
