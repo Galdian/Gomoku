@@ -24,6 +24,8 @@ P2_STONE_COLOR = (255, 255, 255)
 
 FPSCLOCK = pygame.time.Clock()
 
+
+
 # DRAW BOARD
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -34,7 +36,7 @@ background.fill(BOARD_COLOR)
 square_border = (BOARD_SQUARE_LENGTH / (NUM_OF_LINES) * 0.9)
 vertical = 32
 point_xcoor = 1
-points_list = []
+points_list_for_drawing = []
 ai_points_list = [[], [], []]
 for a in range(0, NUM_OF_LINES):
 	horizontal = 32
@@ -42,7 +44,7 @@ for a in range(0, NUM_OF_LINES):
 	for b in range(0, NUM_OF_LINES):
 		point_in_space = pygame.draw.rect(background, BOARD_COLOR, (vertical, horizontal, square_border, square_border))
 		horizontal += BOARD_SQUARE_LENGTH / (NUM_OF_LINES - 1)
-		points_list.append([point_in_space, Point(point_xcoor, point_ycoor, 0, (
+		points_list_for_drawing.append([point_in_space, Point(point_xcoor, point_ycoor, 0, (
 			point_in_space.left + square_border / 2, point_in_space.top + square_border / 2))])
 		ai_points_list[0].append([point_xcoor, point_ycoor])
 		point_ycoor += 1
@@ -98,11 +100,11 @@ def next_turn():
 
 # CPU MOVE
 prev_move = []
-def cpu_move(points_list, player, prev_move):
-	movecords = AI_move(ai_points_list, player, prev_move)
-	drawcords = find_stone_coor(points_list, movecords[0], movecords[1])
+def cpu_move(ai_list, draw_list, player):
+	global prev_move
+	movecords = AI_move(ai_list, player, prev_move)
+	drawcords = find_stone_coor(draw_list, movecords[0], movecords[1])
 	draw_stone(player, drawcords[0], drawcords[1])
-	points_list[find_point_by_coor(points_list, movecords[0], movecords[1])][1].player = player
 	prev_move = [movecords[0], movecords[1]]
 	ai_set_points_lists(player, movecords[0], movecords[1])
 	if check_connected_stones(ai_points_list, player, movecords[0], movecords[1]) == 4:
@@ -136,12 +138,12 @@ while running:
 		if not running:
 			pygame.quit()
 		elif current_player == cpu_player:
-			cpu_move(ai_points_list, current_player, prev_move)
-		elif current_player != cpu_player:
-			cpu_move(ai_points_list, current_player, prev_move)
+			cpu_move(ai_points_list, points_list_for_drawing, current_player)
+		# elif current_player != cpu_player:
+		# 	cpu_move(ai_points_list, points_list_for_drawing, current_player)
 		elif event.type == MOUSEBUTTONUP:
 			mouse_pos = pygame.mouse.get_pos()
-			for point in points_list:
+			for point in points_list_for_drawing:
 				point_in_space = point[0]
 				if point_in_space.collidepoint(mouse_pos) and pygame.MOUSEBUTTONUP and point[1].player == 0:
 					draw_stone(current_player, point[1].coords_for_stone[0], point[1].coords_for_stone[1])
